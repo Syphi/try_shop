@@ -84,3 +84,15 @@ pyvenv.cfg
 .venv
 pip-selfcheck.json
 
+*.pyc
+
+
+config/
+images/
+static/
+/alembic/script.py.mako
+/alembic/README
+/alembic/env.py
+/alembic.ini
+/alembic.ini.save
+/alembic.ini.save.1
