@@ -87,7 +87,7 @@ pip-selfcheck.json
 *.pyc
 
 
-config/
+
 images/
 static/
 /alembic/script.py.mako
@@ -96,3 +96,5 @@ static/
 /alembic.ini
 /alembic.ini.save
 /alembic.ini.save.1
+DBlogic/__pycache__/
+test/__pycache__/

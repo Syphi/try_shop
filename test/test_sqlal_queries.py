@@ -27,7 +27,7 @@ def test_update_product():
     trans = DB.connection.begin()
     try:
         assert DB.update_product(5, other_info={'info': 'new'}) == \
-               (5, 1, 'phone2', '//pass//',	'description', '//slug//2',	100, 25, {'info': 'new'})
+               (5, 1, 'phone3', '//pass//',	'description', '//slug//3',	100, 25, {'info': 'new'})
     finally:
         trans.rollback()
 

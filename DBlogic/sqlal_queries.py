@@ -191,7 +191,7 @@ init_list = read_from_file(conf)
 DB = DbSqlalQueries(init_list)
 # result = DB.add_category(cat_name='name_cat--', image_pass='//pass2//',
 #                    description='2description2', slug='slug2',  parent_id=1)
-# DB.add_product(category_id=1, prod_name='phone2', image='//pass//', description='description', slug='//slug//2',
+# DB.add_product(category_id=1, prod_name='phone3', image='//pass//', description='description', slug='//slug//3',
 #                  price_ua=100, in_stock=25, other_info={})
 # DB.add_customer(user_name='Denis2', email='2ralko2@gmail.com', password='2qwerty2',
 #                   phone='0671663238', shipping_address='Kovalski2')
