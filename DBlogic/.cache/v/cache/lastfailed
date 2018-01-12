@@ -1,3 +1,4 @@
 {
-  "sqlal_queries.py::test_update_table_by_table_name[category-19-cat_name-name_cat-new-expected0]": true
+  "sqlal_queries.py::test_update_table_by_table_name[category-19-cat_name-name_cat-new-expected0]": true,
+  "test_sqlal_queries.py": true
 }
