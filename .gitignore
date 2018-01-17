@@ -98,3 +98,5 @@ static/
 /alembic.ini.save.1
 DBlogic/__pycache__/
 test/__pycache__/
+!/DBlogic/
+!/test/
