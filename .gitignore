@@ -100,3 +100,5 @@ DBlogic/__pycache__/
 test/__pycache__/
 !/DBlogic/
 !/test/
+/.cache/
+/DBlogic/.cache/
