@@ -1,6 +1,5 @@
 import sqlalchemy as sa
 import sqlalchemy.exc
-import json
 import os
 
 def read_from_file(filename='conf'):
