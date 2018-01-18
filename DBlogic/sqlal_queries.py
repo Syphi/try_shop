@@ -2,6 +2,7 @@ import sqlalchemy as sa
 import sqlalchemy.exc
 import os
 
+
 def read_from_file(filename='conf'):
     result = []
     filename = os.path.abspath(__file__).replace('DBlogic', 'config').replace('sqlal_queries.py', filename)
