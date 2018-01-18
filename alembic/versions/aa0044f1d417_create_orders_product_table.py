@@ -19,8 +19,8 @@ depends_on = None
 def upgrade():
     op.create_table(
         'order_products',
-        sa.Column('orders_id',sa.Integer, sa.ForeignKey('orders.id')),
-        sa.Column('product_id',sa.Integer, sa.ForeignKey('product.id')),
+        sa.Column('orders_id',sa.Integer, sa.ForeignKey('orders.id', ondelete="CASCADE")),
+        sa.Column('product_id',sa.Integer, sa.ForeignKey('product.id', ondelete="CASCADE")),
         sa.Column('number_prod', sa.Integer),
     )
 
