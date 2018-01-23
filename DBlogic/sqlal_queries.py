@@ -47,17 +47,11 @@ class DbSqlalQueries:
     def get_table(self, table_name):
         return self.tables[table_name]
 
-    # def generate_slug(self, table_name, txt):
-    #     slug = '/' + table_name + '/' + slugify(txt, max_length=10)
-    #     return slug
-
     def generate_slug(self, table_name, txt):
         slug = slugify(txt, max_length=20)
         table = self.get_table(table_name)
         select = sa.select([table.c.slug])
         result = self.connection.execute(select).fetchall()
-        print(result)
-        print(slug)
         for tup in result:
             if slug in tup[0]:
                 # pass
