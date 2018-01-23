@@ -14,8 +14,7 @@ def DB():
 
 def test_update_category(DB):
 
-    to_input = {'cat_name': 'Test_slug', 'image': 'TEST_pass', 'description': 'TEST_desc',
-                'parent_id': 1}
+    to_input = {'cat_name': 'slug', 'image': 'TEST_pass', 'description': 'TEST_desc'}
     result_input = dict(DB.add_category(**to_input))
 
     for key in to_input:

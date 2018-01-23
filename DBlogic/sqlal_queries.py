@@ -54,13 +54,17 @@ class DbSqlalQueries:
         result = self.connection.execute(select).fetchall()
         for tup in result:
             if slug in tup[0]:
-                # pass
-                raise ValueError("Such slug already exists.")
-        else:
-            return slug
+                if len(slug) >= 18:
+                    list_slug = list(slug)
+                    list_slug[18] = '-'
+                    list_slug[18:20] = random.randint(0, 99)
+                    slug = str(list_slug)
+                    print(slug)
+                else:
+                    slug = '{}{}{}'.format(slug, '-', random.randint(0, 99))
+        return slug
 
-
-    def add_category(self, cat_name, parent_id, image='', description=''):
+    def add_category(self, cat_name, parent_id=None, image='', description=''):
         slug = self.generate_slug('category', cat_name)
         category_table = self.get_table('category')
         insert = sa.insert(category_table).returning(category_table)
@@ -189,4 +193,3 @@ class DbSqlalQueries:
         delete_str = sa.text('''DELETE FROM orders WHERE id = :id_order;''')
         result = self.connection.execute(delete_str, id_order=id_order)
         return result
-

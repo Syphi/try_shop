@@ -4,12 +4,11 @@ import sqlalchemy as sa
 
 class Manager:
     def __init__(self, filename):
-        self.filename = filename
-        self.init_dict = sq.read_from_file(self.filename)
-        self.name = self.init_dict['name']
-        self.login = self.init_dict['login']
-        self.password = self.init_dict['password']
-        self.host = self.init_dict['host']
+        init_dict = sq.read_from_file(filename)
+        self.name = init_dict['name']
+        self.login = init_dict['login']
+        self.password = init_dict['password']
+        self.host = init_dict['host']
 
     def __enter__(self):
         self.DB = sq.DbSqlalQueries(self.name, self.login, self.password, self.host)
@@ -23,8 +22,7 @@ class Manager:
 def test_update_category():
     with Manager('conf') as DB:
 
-        to_input = {'cat_name': 'ueueu', 'image': 'TEST_pass', 'description': 'TEST_desc',
-                    'parent_id': 1}
+        to_input = {'cat_name': 'ueueu', 'image': 'TEST_pass', 'description': 'TEST_desc'}
         result_input = dict(DB.add_category(**to_input))
 
 

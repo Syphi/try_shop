@@ -24,7 +24,7 @@ def upgrade():
         sa.Column('image', sa.String(20)),
         sa.Column('description', sa.Text),
         sa.Column('slug', sa.String(20), nullable=False),
-        sa.Column('parent_id',sa.Integer, sa.ForeignKey('category.id')),
+        sa.Column('parent_id', sa.Integer, sa.ForeignKey('category.id')),
     )
 
 
