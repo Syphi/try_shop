@@ -1,24 +1,18 @@
 import sqlalchemy as sa
 import sqlalchemy.exc
 import os
+from slugify import slugify
+import random
+
 
 def read_from_file(filename='conf'):
-    result = []
-    filename = os.path.abspath(__file__).replace('DBlogic', 'config').replace('sqlal_queries.py', filename)
+    result = {'host': 'localhost'}
+    path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    filename = os.path.join(path, 'config', filename)
     with open(filename, 'r') as f:
         for line in f:
-            if 'name' in line:
-                data = line.split()
-                result.append(data[2])
-            elif 'login' in line:
-                data = line.split()
-                result.append(data[2])
-            elif 'password' in line:
-                data = line.split()
-                result.append(data[2])
-            elif 'host' in line:
-                data = line.split()
-                result.append(data[2])
+            data = line.split()
+            result[data[0]] = data[2]
     return result
 
 
@@ -37,12 +31,12 @@ class DbSqlalQueries:
             print('Init class and connection')
 
         except (sa.exc.DBAPIError, sa.exc.DatabaseError) as e:
-            print('shit - no such db')
+            print('no such db')
             print(e)
 
     def __del__(self):
         self.connection.close()
-        print('Close class and connection')
+        # print('Close class and connection')
 
     def init_tables(self):
         tables = {}
@@ -53,14 +47,35 @@ class DbSqlalQueries:
     def get_table(self, table_name):
         return self.tables[table_name]
 
-    def add_category(self, cat_name, slug, parent_id, image_pass='', description=''):
+    # def generate_slug(self, table_name, txt):
+    #     slug = '/' + table_name + '/' + slugify(txt, max_length=10)
+    #     return slug
+
+    def generate_slug(self, table_name, txt):
+        slug = slugify(txt, max_length=20)
+        table = self.get_table(table_name)
+        select = sa.select([table.c.slug])
+        result = self.connection.execute(select).fetchall()
+        print(result)
+        print(slug)
+        for tup in result:
+            if slug in tup[0]:
+                # pass
+                raise ValueError("Such slug already exists.")
+        else:
+            return slug
+
+
+    def add_category(self, cat_name, parent_id, image='', description=''):
+        slug = self.generate_slug('category', cat_name)
         category_table = self.get_table('category')
         insert = sa.insert(category_table).returning(category_table)
-        insert = insert.values({'cat_name': str(cat_name), 'image': str(image_pass), 'description': str(description),
+        insert = insert.values({'cat_name': str(cat_name), 'image': str(image), 'description': str(description),
                                 'slug': str(slug), 'parent_id': parent_id})
         return self.connection.execute(insert).fetchone()
 
-    def add_product(self, category_id, prod_name, slug, price_ua, in_stock, image='', description='', other_info='{}'):
+    def add_product(self, category_id, prod_name, price_ua, in_stock, image='', description='', other_info='{}'):
+        slug = self.generate_slug('product', prod_name)
         product_table = self.get_table('product')
         insert = sa.insert(product_table).returning(product_table)
         insert = insert.values({'category_id': category_id, 'prod_name': str(prod_name), 'image': str(image),
@@ -84,19 +99,11 @@ class DbSqlalQueries:
                                 'delivery_data_time': delivery_data_time, 'payment_type': payment_type})
         return_dictionary['orders'] = self.connection.execute(insert).fetchone()
 
-
-        select = order_table.select()
-        select = select.where(sa.and_(order_table.c.customer_id == customer_id,
-                                      order_table.c.sum_price == sum_price,
-                                      order_table.c.payment_type == payment_type))
-        result_id = self.connection.execute(select).fetchall()
-        result_id = result_id[-1][0]
-
         order_product_table = self.get_table('order_products')
         insert = order_product_table.insert().returning(order_product_table)
         insert_list = []
         for key, value in dictionary_with_products.items():
-            new_row = {'orders_id': result_id, 'product_id': key, 'number_prod': value}
+            new_row = {'orders_id': return_dictionary['orders'][0], 'product_id': key, 'number_prod': value}
             insert_list.append(new_row)
 
         return_dictionary['order_products'] = self.connection.execute(insert, insert_list)
@@ -108,7 +115,7 @@ class DbSqlalQueries:
         result = self.connection.execute(select).fetchall()
         return result
 
-    def get_child_categories_for_category_by_id(self, category_id):
+    def get_subcategories(self, category_id):
         category_table = self.get_table('category')
         select = category_table.select()
         select = select.where(category_table.c.parent_id == category_id)
@@ -143,6 +150,8 @@ class DbSqlalQueries:
         return self.connection.execute(select).fetchone()
 
     def update_category(self, category_id, **kwargs):
+        if 'cat_name' in kwargs:
+            kwargs['slug'] = self.generate_slug('category', kwargs['cat_name'])
         category_table = self.get_table('category')
         update = category_table.update().returning(category_table)
         update = update.where(category_table.c.id == category_id).values(kwargs)
@@ -155,6 +164,8 @@ class DbSqlalQueries:
         return self.connection.execute(update).fetchone()
 
     def update_product(self, product_id, **kwargs):
+        if 'prod_name' in kwargs:
+            kwargs['slug'] = self.generate_slug('product', kwargs['prod_name'])
         product_table = self.get_table('product')
         update = product_table.update().returning(product_table)
         update = update.where(product_table.c.id == product_id).values(kwargs)
@@ -168,14 +179,12 @@ class DbSqlalQueries:
 
     def update_order_product(self, order_id, product_id, **kwargs):
         order_product_table = self.get_table('order_products')
-        result_list = []
-        for key, value in kwargs.items():
-            update = order_product_table.update().returning(order_product_table)
-            update = update.where(sa.and_(order_product_table.c.orders_id == order_id,
-                                          order_product_table.c.product_id == product_id)).\
-                values({'orders_id': order_id, 'product_id': product_id, 'number_prod': value})
-            result_list.append(self.connection.execute(update))
-        return result_list
+        update = order_product_table.update().returning(order_product_table)
+        update = update.where(sa.and_(order_product_table.c.orders_id == order_id,
+                                      order_product_table.c.product_id == product_id)).\
+            values({'orders_id': order_id, 'product_id': product_id, 'number_prod': kwargs['number_prod']})
+        result = self.connection.execute(update)
+        return result
 
     def delete_customer(self, id_customer):
         delete_str = sa.text('''DELETE FROM customer WHERE id = :id_customer;''')
@@ -186,3 +195,4 @@ class DbSqlalQueries:
         delete_str = sa.text('''DELETE FROM orders WHERE id = :id_order;''')
         result = self.connection.execute(delete_str, id_order=id_order)
         return result
+
