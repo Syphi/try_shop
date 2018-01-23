@@ -28,6 +28,8 @@ class DbSqlalQueries:
 
             self.tables = self.init_tables()
 
+            self.slug_number = 0
+
             print('Init class and connection')
 
         except (sa.exc.DBAPIError, sa.exc.DatabaseError) as e:
@@ -55,14 +57,17 @@ class DbSqlalQueries:
         for tup in result:
             if slug in tup[0]:
                 if len(slug) >= 18:
-                    list_slug = list(slug)
-                    list_slug[18] = '-'
-                    list_slug[18:20] = random.randint(0, 99)
-                    slug = str(list_slug)
-                    print(slug)
+                   slug = '{}{}{}'.format(slug[:17], '-', self.inc_slug())
                 else:
-                    slug = '{}{}{}'.format(slug, '-', random.randint(0, 99))
+                    slug = '{}{}{}'.format(slug, '-', self.inc_slug())
         return slug
+
+    def inc_slug(self):
+        if self.slug_number < 99:
+            self.slug_number += 1
+        else:
+            raise AttributeError('Such slug is exist')
+        return self.slug_number
 
     def add_category(self, cat_name, parent_id=None, image='', description=''):
         slug = self.generate_slug('category', cat_name)
