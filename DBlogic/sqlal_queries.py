@@ -37,7 +37,6 @@ class DbSqlalQueries:
 
     def __del__(self):
         self.connection.close()
-        # print('Close class and connection')
 
     @classmethod
     def parse(cls, string):
@@ -57,21 +56,16 @@ class DbSqlalQueries:
     def generate_slug(self, table_name, txt):
         slug = slugify(txt, max_length=20)
         table = self.get_table(table_name)
-        select = sa.select([table.c.slug]).where(table.c.slug == slug)
-        result = self.connection.execute(select).fetchall()
-        result = [tup[0] for tup in result]
-        if len(result) == 0:
-            return slug
-        else:
-            select = sa.select([table.c.slug]).where(table.c.slug.like(f'%{txt}%'))
-            result = self.connection.execute(select).fetchall()
-            result = [tup[0] for tup in result]
-            print(result)
-            num = 0
-            while slug in result:
-                slug = f'{slug[:17]}-{num}'
-                num += 1
-            return slug
+        result = True
+        num = 0
+        while result is True:
+            select = sa.select([table.c.slug]).where(table.c.slug == slug)
+            select = sa.exists(select).select()
+            result = self.connection.execute(select).fetchone()
+            result = result[0]
+            slug = f'{slug[:17]}-{num}'
+            num += 1
+        return slug
 
     def update_slug(self, table_name, new_name, id_name):
         table = self.get_table(table_name)
