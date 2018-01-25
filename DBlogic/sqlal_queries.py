@@ -27,6 +27,8 @@ class DbSqlalQueries:
 
             self.tables = self.init_tables()
 
+            self.slug_number = 0
+
             print('Init class and connection')
 
         except (sa.exc.DBAPIError, sa.exc.DatabaseError) as e:
@@ -35,7 +37,12 @@ class DbSqlalQueries:
 
     def __del__(self):
         self.connection.close()
-        print('Close class and connection')
+
+    @classmethod
+    def parse(cls, string):
+        name, login, password, host = map(str, string.split('-'))
+        Db = cls(name, login, password, host)
+        return Db
 
     def init_tables(self):
         tables = {}
@@ -46,21 +53,41 @@ class DbSqlalQueries:
     def get_table(self, table_name):
         return self.tables[table_name]
 
-    def add_category(self, cat_name, slug, parent_id, image_pass='', description=''):
-        slug = '/category/' + cat_name
-        print(slug)
-        slug = slugify(cat_name, max_length=20, separator='/')
-        print(slug)
+    def generate_slug(self, table_name, txt):
+        slug = slugify(txt, max_length=20)
+        table = self.get_table(table_name)
+        result = True
+        num = 0
+        while result is True:
+            select = sa.select([table.c.slug]).where(table.c.slug == slug)
+            select = sa.exists(select).select()
+            result = self.connection.execute(select).fetchone()
+            result = result[0]
+            slug = f'{slug[:17]}-{num}'
+            num += 1
+        return slug
+
+    def update_slug(self, table_name, new_name, id_name):
+        table = self.get_table(table_name)
+        select = sa.select([table.c.slug]).where(table.c.id == id_name)
+        old_slug = self.connection.execute(select).fetchone()
+        old_slug = old_slug[0]
+        new_slug = slugify(new_name, max_length=20)
+        if old_slug == new_slug:
+            return old_slug
+        else:
+            return self.generate_slug(table_name, new_name)
+
+    def add_category(self, cat_name, parent_id=None, image='', description=''):
+        slug = self.generate_slug('category', cat_name)
         category_table = self.get_table('category')
         insert = sa.insert(category_table).returning(category_table)
-        insert = insert.values({'cat_name': str(cat_name), 'image': str(image_pass), 'description': str(description),
+        insert = insert.values({'cat_name': str(cat_name), 'image': str(image), 'description': str(description),
                                 'slug': str(slug), 'parent_id': parent_id})
         return self.connection.execute(insert).fetchone()
 
-    def add_product(self, category_id, prod_name, slug, price_ua, in_stock, image='', description='', other_info='{}'):
-        txt = 'product ' + prod_name
-        slug = slugify(txt, max_length=20, separator='/')
-        print(slug)
+    def add_product(self, category_id, prod_name, price_ua, in_stock, image='', description='', other_info='{}'):
+        slug = self.generate_slug('product', prod_name)
         product_table = self.get_table('product')
         insert = sa.insert(product_table).returning(product_table)
         insert = insert.values({'category_id': category_id, 'prod_name': str(prod_name), 'image': str(image),
@@ -135,6 +162,8 @@ class DbSqlalQueries:
         return self.connection.execute(select).fetchone()
 
     def update_category(self, category_id, **kwargs):
+        if 'cat_name' in kwargs:
+            kwargs['slug'] = self.update_slug('category', kwargs['cat_name'], category_id)
         category_table = self.get_table('category')
         update = category_table.update().returning(category_table)
         update = update.where(category_table.c.id == category_id).values(kwargs)
@@ -147,6 +176,8 @@ class DbSqlalQueries:
         return self.connection.execute(update).fetchone()
 
     def update_product(self, product_id, **kwargs):
+        if 'prod_name' in kwargs:
+            kwargs['slug'] = self.update_slug('product', kwargs['prod_name'], product_id)
         product_table = self.get_table('product')
         update = product_table.update().returning(product_table)
         update = update.where(product_table.c.id == product_id).values(kwargs)
@@ -176,32 +207,3 @@ class DbSqlalQueries:
         delete_str = sa.text('''DELETE FROM orders WHERE id = :id_order;''')
         result = self.connection.execute(delete_str, id_order=id_order)
         return result
-
-
-
-class Manager:
-    def __init__(self, filename):
-        self.filename = filename
-        self.init_dict = read_from_file(self.filename)
-        self.name = self.init_dict['name']
-        self.login = self.init_dict['login']
-        self.password = self.init_dict['password']
-        self.host = self.init_dict['host']
-
-    def __enter__(self):
-        self.DB = DbSqlalQueries(self.name, self.login, self.password, self.host)
-        self.trans = self.DB.connection.begin()
-        return self.DB
-
-    def __exit__(self, *args):
-        self.trans.rollback()
-
-
-with Manager('conf') as DB:
-    DB.add_category(cat_name='TEST', image_pass='TEST',
-                    description='TEST', slug='SLUG', parent_id=1)
-    DB.add_orders(customer_id=4, sum_price=777, delivery_data_time='2018-10-19 10:23:54+02',
-                  payment_type='card', dictionary_with_products={1: 1, 5: 40})
-    to_input = {'category_id': 1, 'prod_name': 'TEST', 'image': 'TEST', 'description': 'TEST', 'slug': 'TEST',
-                'price_ua': 1, 'in_stock': 1, 'other_info': {'TEST': 'TEST'}}
-    DB.add_product(**to_input)
