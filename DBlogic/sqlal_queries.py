@@ -2,7 +2,6 @@ import sqlalchemy as sa
 import sqlalchemy.exc
 import os
 from slugify import slugify
-import random
 
 
 def read_from_file(filename='conf'):
@@ -38,7 +37,7 @@ class DbSqlalQueries:
 
     def __del__(self):
         self.connection.close()
-        print('Close class and connection')
+        # print('Close class and connection')
 
     @classmethod
     def parse(cls, string):
@@ -58,18 +57,32 @@ class DbSqlalQueries:
     def generate_slug(self, table_name, txt):
         slug = slugify(txt, max_length=20)
         table = self.get_table(table_name)
-        select = sa.select([table.c.slug])
+        select = sa.select([table.c.slug]).where(table.c.slug == slug)
         result = self.connection.execute(select).fetchall()
         result = [tup[0] for tup in result]
-        print(result)
-        num = 0
-        while slug in result:
-            if len(slug) >= 18:
+        if len(result) == 0:
+            return slug
+        else:
+            select = sa.select([table.c.slug]).where(table.c.slug.like(f'%{txt}%'))
+            result = self.connection.execute(select).fetchall()
+            result = [tup[0] for tup in result]
+            print(result)
+            num = 0
+            while slug in result:
                 slug = f'{slug[:17]}-{num}'
-            else:
-                slug = f'{slug}-{num}'
-        print(slug)
-        return slug
+                num += 1
+            return slug
+
+    def update_slug(self, table_name, new_name, id_name):
+        table = self.get_table(table_name)
+        select = sa.select([table.c.slug]).where(table.c.id == id_name)
+        old_slug = self.connection.execute(select).fetchone()
+        old_slug = old_slug[0]
+        new_slug = slugify(new_name, max_length=20)
+        if old_slug == new_slug:
+            return old_slug
+        else:
+            return self.generate_slug(table_name, new_name)
 
     def add_category(self, cat_name, parent_id=None, image='', description=''):
         slug = self.generate_slug('category', cat_name)
@@ -156,7 +169,7 @@ class DbSqlalQueries:
 
     def update_category(self, category_id, **kwargs):
         if 'cat_name' in kwargs:
-            kwargs['slug'] = self.generate_slug('category', kwargs['cat_name'])
+            kwargs['slug'] = self.update_slug('category', kwargs['cat_name'], category_id)
         category_table = self.get_table('category')
         update = category_table.update().returning(category_table)
         update = update.where(category_table.c.id == category_id).values(kwargs)
@@ -170,7 +183,7 @@ class DbSqlalQueries:
 
     def update_product(self, product_id, **kwargs):
         if 'prod_name' in kwargs:
-            kwargs['slug'] = self.generate_slug('product', kwargs['prod_name'])
+            kwargs['slug'] = self.update_slug('product', kwargs['prod_name'], product_id)
         product_table = self.get_table('product')
         update = product_table.update().returning(product_table)
         update = update.where(product_table.c.id == product_id).values(kwargs)
