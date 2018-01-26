@@ -90,15 +90,19 @@ pip-selfcheck.json
 
 images/
 static/
-/alembic/script.py.mako
-/alembic/README
-/alembic/env.py
-/alembic.ini
-/alembic.ini.save
-/alembic.ini.save.1
+#/alembic/script.py.mako
+#/alembic/README
+#/alembic/env.py
+#/alembic.ini
+#/alembic.ini.save
+#/alembic.ini.save.1
 DBlogic/__pycache__/
 test/__pycache__/
 !/DBlogic/
 !/test/
 /.cache/
 /DBlogic/.cache/
+#!/alembic.ini
+#!/alembic/script.py.mako
+#!/alembic/env.py
+#!/alembic/README

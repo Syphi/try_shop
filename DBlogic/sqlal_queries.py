@@ -207,3 +207,9 @@ class DbSqlalQueries:
         delete_str = sa.text('''DELETE FROM orders WHERE id = :id_order;''')
         result = self.connection.execute(delete_str, id_order=id_order)
         return result
+
+init_dict = read_from_file('conf')
+DB = DbSqlalQueries(init_dict['name'], init_dict['login'], init_dict['password'], init_dict['host'])
+# DB.add_product(2, 'Test_prod_name', 100, 50, '//pass//', 'Description_text')
+# DB.add_orders(4, 200, {222: 2})
+# print(DB.db_string)
