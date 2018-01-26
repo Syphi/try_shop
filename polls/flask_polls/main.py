@@ -1,14 +1,6 @@
-from flask import Flask
-from flask import jsonify
-from DBlogic import sqlal_queries as sq
-from config import flack_config
+from polls.flask_polls import app
+import json
 from test.test_sqlal_queries import Manager
-
-
-app = Flask(__name__)
-app.debug = flack_config.DEBUG
-app.host = flack_config.HOST
-app.port = flack_config.PORT
 
 
 @app.route('/')
@@ -17,13 +9,10 @@ def index():
     with Manager('conf') as DB:
         all_category = DB.get_all_categories()
         list_of_cat = list()
-        for v in all_category:
-            cat = dict()
-            for column, value in v.items():
-                cat[column] = value
-            list_of_cat.append(cat)
+        for cat in all_category:
+            list_of_cat.append(dict(cat))
 
-    return jsonify(list_of_cat)
+    return json.dumps(list_of_cat)
 
 
 if __name__ == "__main__":
