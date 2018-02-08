@@ -21,7 +21,7 @@ def upgrade():
         'orders',
         sa.Column('id', sa.Integer, primary_key=True),
         sa.Column('customer_id', sa.Integer, sa.ForeignKey('customer.id', ondelete="CASCADE")),
-        sa.Column('sum_price', sa.Numeric(asdecimal=False), nullable=False),
+        sa.Column('sum_price', sa.Numeric, nullable=False),
         sa.Column('delivery_data_time', sa.TIMESTAMP),
         sa.Column('payment_type', sa.String(4), sa.dialects.postgresql.ENUM('CASH', 'CARD', name='payment_type')),
     )

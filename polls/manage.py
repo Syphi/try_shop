@@ -1,4 +1,5 @@
 from flask import Flask
+from flask import g
 
 from config import flack_config
 from polls.flask_polls.main import frontend
@@ -13,6 +14,7 @@ def create_app():
     app.register_blueprint(frontend)
 
     return app
+
 
 if __name__ == '__main__':
     app = create_app()
